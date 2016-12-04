@@ -1,0 +1,51 @@
+
+(defn reduce-args [args s]
+  (or (for [[result new-s] (map (first args) (fn [arg] (arg s)))
+            [results final-s] (reduce-args (rest args) new-s)]
+        (list (cons result results) final-s))
+      (maybe (list empty-list s))))
+
+(deftype state-val [invoke-fn]
+  Stringable
+  (string-list [_]
+    (list "<state >"))
+
+  Function
+  (invoke [ev s]
+    (invoke-fn s))
+
+  Container
+  (map [_ f]
+    (state-val (fn [s]
+                 (let [[v new-s] (invoke-fn s)]
+                   (list (f v) new-s)))))
+  (wrap [_ v]
+    (state-val (fn [s]
+                 (list v s))))
+  (apply* [fv args]
+    (state-val (fn [s]
+                 (let [[results new-s] (extract (reduce-args args s))
+                       [f final-s] (fv new-s)]
+                   (list (apply f results) final-s)))))
+  (flat-map [ev f]
+    (state-val (fn [s]
+                 (let [[v new-s] (invoke-fn s)]
+                   ((f v) new-s))))))
+
+(def state
+  (reify
+    Function
+    (invoke [_ v]
+      (state-val (fn [s]
+                   (list v s))))
+
+    Type
+    (instance? [_ sv] (instance? state-val sv))))
+
+(defn get-state []
+  (state-val (fn [s]
+               (list s s))))
+
+(defn update-state [f]
+  (state-val (fn [s]
+               (list s (f s)))))

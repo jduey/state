@@ -1,0 +1,41 @@
+(add-ns st (module "state.toc"))
+
+(defn double [x]
+  (* 2 x))
+
+(main [_]
+      ;; check the functor and applicative laws for state
+      (let [env :environment]
+        (println :functor-1 (= ((map (st/state 5) identity) env)
+                               ((st/state 5) env)))
+        (println :functor-2 (= ((map (map (st/state 2) inc) double) env)
+                               ((map (st/state 2) (comp inc double)) env)))
+        (println :apply-1 (= ((map (st/state 5) inc) env)
+                             ((apply-to inc (st/state 5)) env)))
+        (println :apply-2 (= ((st/state 5) env)
+                             ((apply-to identity (st/state 5)) env)))
+        (let [v1 (st/state "first ")
+              v2 (st/state "second ")
+              v3 (st/state "third")]
+          (println :apply-3 (= ((apply-to comp (apply-to comp v1 v2) v3) env)
+                               ((apply-to comp v1 (apply-to comp v2 v3)) env)
+                               ((apply-to comp v1 v2 v3) env)))))
+      (println)
+
+      (let [rv1 (st/state 1)
+            rv5 (st/state 5)
+            env {:x 5 :y 1 :z 9}]
+        (println :rv1-invoked (rv1 env))
+        (println)
+        (println :map (map rv1 (fn [x]
+                                 (println :incrementing x)
+                                 (inc x))))
+        (println)
+        (println :mapped ((map rv1 (fn [x]
+                                     (println :incrementing x)
+                                     (inc x)))
+                          env))
+        (println)
+        (println :apply (apply-to + rv1 rv5))
+        (println)
+        (println :applied ((apply-to + rv1 rv5) env))))
