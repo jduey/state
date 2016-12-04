@@ -49,3 +49,13 @@
 (defn update-state [f]
   (state-val (fn [s]
                (list s (f s)))))
+
+(defn get-val [k]
+  (state-val (fn [s]
+               (list (extract (or (get s k)
+                                  (maybe nothing)))
+                     s))))
+
+(defn set-val [k v]
+  (state-val (fn [s]
+               (list nothing (assoc s k v)))))
