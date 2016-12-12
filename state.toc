@@ -52,7 +52,7 @@
 
 (defn get-val [k]
   (state-val (fn [s]
-               (list (extract (or (get s k)
+               (list (extract (or (map (get s k) maybe)
                                   (maybe nothing)))
                      s))))
 
